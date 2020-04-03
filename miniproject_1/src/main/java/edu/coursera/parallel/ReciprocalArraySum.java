@@ -2,11 +2,7 @@ package edu.coursera.parallel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RecursiveAction;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.summingDouble;
 
 /**
  * Class wrapping methods for implementing reciprocal array sum in parallel.
@@ -105,7 +101,7 @@ public final class ReciprocalArraySum {
         /**
          * Intermediate value produced by this task.
          */
-        private double value;
+        private double value = 0;
 
         /**
          * Constructor.
@@ -133,7 +129,9 @@ public final class ReciprocalArraySum {
 
         @Override
         protected void compute() {
-            // TODO
+            for (int i = startIndexInclusive; i < endIndexExclusive; i++) {
+                value += 1 / input[i];
+            }
         }
     }
 
@@ -148,35 +146,16 @@ public final class ReciprocalArraySum {
      */
     protected static double parArraySum(final double[] input) {
         assert input.length % 2 == 0;
-
-        double sum = 0;
-
-        final int middle = input.length / 2;
-
-        final CompletableFuture<Double> futureA = CompletableFuture.supplyAsync(() -> {
-            double sumA = 0;
-            for (int i = 0; i < middle; i++) {
-                sumA += 1 / input[i];
-            }
-            return sumA;
-        });
-
-        final CompletableFuture<Double> futureB = CompletableFuture.supplyAsync(() -> {
-            double sumB = 0;
-            for (int i = middle; i < input.length; i++) {
-                sumB += 1 / input[i];
-            }
-            return sumB;
-        });
-
-        sum = futureA.thenCombine(futureB, Double::sum).join();
-
-
-        return sum;
+        int mid = input.length / 2;
+        final ReciprocalArraySumTask left = new ReciprocalArraySumTask(0, mid, input);
+        final ReciprocalArraySumTask right = new ReciprocalArraySumTask(mid, input.length, input);
+        left.fork();
+        right.compute();
+        left.join();
+        return left.getValue() + right.getValue();
     }
 
     /**
-     * Extend the work you did to implement parArraySum to use a set
      * number of tasks to compute the reciprocal array sum. You may find the
      * above utilities getChunkStartInclusive and getChunkEndExclusive helpful
      * in computing the range of element indices that belong to each chunk.
@@ -188,46 +167,24 @@ public final class ReciprocalArraySum {
     protected static double parManyTaskArraySum(final double[] input,
                                                 final int numTasks) {
         double sum = 0;
+        final List<ReciprocalArraySumTask> ts = new ArrayList<ReciprocalArraySumTask>(numTasks);
 
-        final List<CompletableFuture<Double>> futures = new ArrayList<>(numTasks);
+        int i;
+        for (i = 0; i < numTasks - 1; i++) {
+            ts.add(new ReciprocalArraySumTask(getChunkStartInclusive(i, numTasks, input.length), getChunkEndExclusive(i, numTasks, input.length), input));
+            ts.get(i).fork();
+        }
+        ts.add(new ReciprocalArraySumTask(getChunkStartInclusive(i, numTasks, input.length), getChunkEndExclusive(i, numTasks, input.length), input));
+        ts.get(i).compute();
 
-        final int nElements = input.length;
-        for (int i = 0; i < numTasks; i++) {
-
-            int start = getChunkStartInclusive(i, numTasks, nElements);
-            int end = getChunkEndExclusive(i, numTasks, nElements);
-
-            final CompletableFuture<Double> future = CompletableFuture.supplyAsync(() -> {
-                double sumF = 0;
-                for (int j = start; j < end; j++) {
-                    sumF += 1 / input[j];
-                }
-                return sumF;
-            });
-
-            futures.add(future);
+        for (int j = 0; j < numTasks - 1; j++) {
+            ts.get(j).join();
         }
 
-        final CompletableFuture<List<Double>> results = sequence(futures);
-
-        List<Double> doubles = new ArrayList<>();
-        try {
-            doubles = results.get();
-        } catch (Exception e) {
-            e.printStackTrace();
+        for (int j = 0; j < numTasks; j++) {
+            sum += ts.get(j).getValue();
         }
-        sum = doubles.stream().mapToDouble(f -> f).sum();
-
         return sum;
     }
-
-    public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
-        final CompletableFuture<Void> allDoneFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-        return allDoneFuture.thenApply(v ->
-                futures.stream().
-                        map(CompletableFuture::join).
-                        collect(Collectors.<T>toList())
-        );
-    }
-
 }
+
