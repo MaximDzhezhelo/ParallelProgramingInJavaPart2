@@ -1,8 +1,8 @@
 package edu.coursera.parallel;
 
-import java.util.Random;
-
 import junit.framework.TestCase;
+
+import java.util.Random;
 
 public class ReciprocalArraySumTest extends TestCase {
     // Number of times to repeat each test, for consistent timing results.
@@ -58,9 +58,9 @@ public class ReciprocalArraySumTest extends TestCase {
     /**
      * A helper function for tests of the two-task parallel implementation.
      *
-     * @param N The size of the array to test
+     * @param N                  The size of the array to test
      * @param useManyTaskVersion Switch between two-task and many-task versions of the code
-     * @param ntasks Number of tasks to use
+     * @param ntasks             Number of tasks to use
      * @return The speedup achieved, not all tests use this information
      */
     private double parTestHelper(final int N, final boolean useManyTaskVersion, final int ntasks) {
@@ -106,7 +106,7 @@ public class ReciprocalArraySumTest extends TestCase {
         final long seqTime = (seqEndTime - seqStartTime) / REPEATS;
         final long parTime = (parEndTime - parStartTime) / REPEATS;
 
-        return (double)seqTime / (double)parTime;
+        return (double) seqTime / (double) parTime;
     }
 
     /**
@@ -136,7 +136,7 @@ public class ReciprocalArraySumTest extends TestCase {
      */
     public void testParManyTaskTwoMillion() {
         final int ncores = getNCores();
-        final double minimalExpectedSpeedup = (double)ncores * 0.6;
+        final double minimalExpectedSpeedup = (double) ncores * 0.6;
         final double speedup = parTestHelper(2_000_000, true, ncores);
         final String errMsg = String.format("It was expected that the many-task parallel implementation would run at " +
                 "least %fx faster, but it only achieved %fx speedup", minimalExpectedSpeedup, speedup);
@@ -149,7 +149,7 @@ public class ReciprocalArraySumTest extends TestCase {
     public void testParManyTaskTwoHundredMillion() {
         final int ncores = getNCores();
         final double speedup = parTestHelper(200_000_000, true, ncores);
-        final double minimalExpectedSpeedup = (double)ncores * 0.8;
+        final double minimalExpectedSpeedup = (double) ncores * 0.8;
         final String errMsg = String.format("It was expected that the many-task parallel implementation would run at " +
                 "least %fx faster, but it only achieved %fx speedup", minimalExpectedSpeedup, speedup);
         assertTrue(errMsg, speedup >= minimalExpectedSpeedup);
