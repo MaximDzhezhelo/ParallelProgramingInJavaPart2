@@ -1,8 +1,8 @@
 package edu.coursera.parallel;
 
-import java.util.Random;
-
 import junit.framework.TestCase;
+
+import java.util.Random;
 
 public class StudentAnalyticsTest extends TestCase {
     final static int REPEATS = 10;

@@ -1,10 +1,7 @@
 package edu.coursera.parallel;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A simple wrapper class for various analytics methods.
@@ -36,7 +33,7 @@ public final class StudentAnalytics {
     }
 
     /**
-     * TODO compute the average age of all actively enrolled students using
+     * Compute the average age of all actively enrolled students using
      * parallel streams. This should mirror the functionality of
      * averageAgeOfEnrolledStudentsImperative. This method should not use any
      * loops.
@@ -46,7 +43,12 @@ public final class StudentAnalytics {
      */
     public double averageAgeOfEnrolledStudentsParallelStream(
             final Student[] studentArray) {
-        throw new UnsupportedOperationException();
+        return Arrays.asList(studentArray)
+                .parallelStream()
+                .filter(Student::checkIsCurrent)
+                .mapToDouble(Student::getAge)
+                .average()
+                .orElse(Double.NaN);
     }
 
     /**
@@ -90,7 +92,7 @@ public final class StudentAnalytics {
     }
 
     /**
-     * TODO compute the most common first name out of all students that are no
+     * Compute the most common first name out of all students that are no
      * longer active in the class using parallel streams. This should mirror the
      * functionality of mostCommonFirstNameOfInactiveStudentsImperative. This
      * method should not use any loops.
@@ -100,7 +102,14 @@ public final class StudentAnalytics {
      */
     public String mostCommonFirstNameOfInactiveStudentsParallelStream(
             final Student[] studentArray) {
-        throw new UnsupportedOperationException();
+        return Arrays.stream(studentArray)
+                .parallel()
+                .filter(st -> !st.checkIsCurrent())
+                .collect(Collectors.groupingBy(Student::getFirstName, Collectors.counting()))
+                .entrySet().parallelStream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElseThrow(NoSuchElementException::new);
     }
 
     /**
