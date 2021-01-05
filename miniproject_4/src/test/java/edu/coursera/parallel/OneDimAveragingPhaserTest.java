@@ -1,6 +1,5 @@
 package edu.coursera.parallel;
 
-import java.util.Random;
 import java.util.concurrent.Phaser;
 
 import junit.framework.TestCase;
@@ -115,7 +114,7 @@ public class OneDimAveragingPhaserTest extends TestCase {
             final long barrierEndTime = System.currentTimeMillis();
 
             final long fuzzyStartTime = System.currentTimeMillis();
-            OneDimAveragingPhaser.runParallelFuzzyBarrier(niterations, myNewRef, myValRef, N, ntasks);
+            edu.coursera.parallel.OneDimAveragingPhaser.runParallelFuzzyBarrier(niterations, myNewRef, myValRef, N, ntasks);
             final long fuzzyEndTime = System.currentTimeMillis();
 
             if (niterations % 2 == 0) {

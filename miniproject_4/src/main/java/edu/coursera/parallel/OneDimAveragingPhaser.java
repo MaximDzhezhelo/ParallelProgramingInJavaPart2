@@ -108,8 +108,46 @@ public final class OneDimAveragingPhaser {
      * @param tasks The number of threads/tasks to use to compute the solution
      */
     public static void runParallelFuzzyBarrier(final int iterations,
-            final double[] myNew, final double[] myVal, final int n,
-            final int tasks) {
+                                               final double[] myNew, final double[] myVal, final int n,
+                                               final int tasks) {
+        final Phaser ph = new Phaser(0);
+        ph.bulkRegister(tasks);
 
+        final Thread[] threads = new Thread[tasks];
+
+        for (int ii = 0; ii < tasks; ii++) {
+            final int i = ii;
+
+            threads[ii] = new Thread(() -> {
+                double[] threadPrivateMyVal = myVal;
+                double[] threadPrivateMyNew = myNew;
+
+                for (int iter = 0; iter < iterations; iter++) {
+                    final int left = i * (n / tasks) + 1;
+                    final int right = (i + 1) * (n / tasks);
+
+                    int currentPhase = ph.arrive();
+
+                    for (int j = left; j <= right; j++) {
+                        threadPrivateMyNew[j] = (threadPrivateMyVal[j - 1]
+                                + threadPrivateMyVal[j + 1]) / 2.0;
+                    }
+                    ph.awaitAdvance(currentPhase);
+
+                    double[] temp = threadPrivateMyNew;
+                    threadPrivateMyNew = threadPrivateMyVal;
+                    threadPrivateMyVal = temp;
+                }
+            });
+            threads[ii].start();
+        }
+
+        for (int ii = 0; ii < tasks; ii++) {
+            try {
+                threads[ii].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
